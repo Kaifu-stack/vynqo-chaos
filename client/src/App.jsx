@@ -234,11 +234,7 @@ function App() {
           </span>
         ))}
       </div>
-      disconnected && (
-      <div className="disconnect-banner">
-        ⚠️ Reconnecting...
-      </div>
-      );
+
 
       <Room
         room={room}

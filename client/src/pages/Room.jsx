@@ -1,3 +1,5 @@
+import { useEffect, useRef } from "react";
+
 export default function Room({
     room,
     users,
@@ -16,6 +18,8 @@ export default function Room({
     sendEmoji,
     leaveRoom,
 }) {
+
+    // 🔥 Emoji list
     const emojis = [
         "🔥", "😂", "💀", "❤️",
         "😎", "😭", "🤯", "😈",
@@ -23,28 +27,61 @@ export default function Room({
         "💯", "🥶", "😡", "🥳",
         "🤔", "😴", "👀", "🚀"
     ];
-    import { useEffect, useRef } from "react";
+
+    // 💬 Auto scroll chat
     const chatRef = useRef(null);
+
     useEffect(() => {
         chatRef.current?.scrollTo({
             top: chatRef.current.scrollHeight,
             behavior: "smooth"
         });
     }, [chat]);
+
+    // ⏳ Better timer format
+    const formatTime = (seconds) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+
+        return `${mins}:${secs.toString().padStart(2, "0")}`;
+    };
+
     return (
         <div className="app-container">
             <div className="room-card">
 
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                {/* HEADER */}
+                <div
+                    style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center"
+                    }}
+                >
                     <h2>{room.topic}</h2>
-                    <button onClick={leaveRoom}>🚪 Leave</button>
+
+                    <button
+                        className="leave-btn"
+                        onClick={leaveRoom}
+                    >
+                        🚪 Leave
+                    </button>
                 </div>
+
+                {/* ROOM CODE */}
                 {room.code && (
-                    <div style={{ textAlign: "center", marginBottom: "10px" }}>
+                    <div
+                        style={{
+                            textAlign: "center",
+                            marginBottom: "10px"
+                        }}
+                    >
                         🔑 Code: <b>{room.code}</b>
 
                         <button
-                            onClick={() => navigator.clipboard.writeText(room.code)}
+                            onClick={() =>
+                                navigator.clipboard.writeText(room.code)
+                            }
                             style={{
                                 marginLeft: "8px",
                                 padding: "4px 8px",
@@ -56,31 +93,50 @@ export default function Room({
                     </div>
                 )}
 
+                {/* ROOM INFO */}
                 <div className="room-info">
-                    ⏳ {timer}s | 👥 {users.length}
+                    ⏳ {formatTime(timer)} | 👥 {users.length}
                 </div>
 
                 {/* USERS */}
                 <div>
-                    {users.map((u, i) => (
+                    {users.map((u) => (
                         <div
                             key={u.id}
-                            className={`user ${u.id === socketId ? "you" : ""}`}
+                            className={`user
+                                ${u.id === socketId ? "you" : ""}
+                                ${u.id === socketId && speaking ? "speaking" : ""}
+                            `}
                         >
-                            {u.id === socketId && speaking ? "🟢🔊 YOU" : "🟢"} {u.name}
+                            {u.id === socketId && speaking
+                                ? "🟢🔊 YOU"
+                                : "🟢"}{" "}
+                            {u.name}
                         </div>
                     ))}
                 </div>
 
                 {/* VOICE */}
-                <div style={{ textAlign: "center", margin: "10px 0" }}>
+                <div
+                    style={{
+                        textAlign: "center",
+                        margin: "10px 0"
+                    }}
+                >
                     {!inVoice ? (
-                        <button onClick={joinVoice}>🎤 Join Voice</button>
+                        <button onClick={joinVoice}>
+                            🎤 Join Voice
+                        </button>
                     ) : (
                         <>
-                            <button onClick={leaveVoice}>🎤 Disconnect Voice</button>
+                            <button onClick={leaveVoice}>
+                                🎤 Disconnect Voice
+                            </button>
+
                             <button onClick={toggleMute}>
-                                {muted ? "🔇 Unmute" : "🎙️ Mute"}
+                                {muted
+                                    ? "🔇 Unmute"
+                                    : "🎙️ Mute"}
                             </button>
                         </>
                     )}
@@ -89,7 +145,10 @@ export default function Room({
                 {/* CHAT */}
                 <div className="chat-box" ref={chatRef}>
                     {chat.map((msg, i) => (
-                        <div key={i} className="chat-message">
+                        <div
+                            key={i}
+                            className="chat-message"
+                        >
                             <b>{msg.user}:</b> {msg.text}
                         </div>
                     ))}
@@ -99,7 +158,9 @@ export default function Room({
                 <div className="input-row">
                     <input
                         value={message}
-                        onChange={(e) => setMessage(e.target.value)}
+                        onChange={(e) =>
+                            setMessage(e.target.value)
+                        }
                         placeholder="Type something..."
                         onKeyDown={(e) => {
                             if (e.key === "Enter") {
@@ -107,12 +168,22 @@ export default function Room({
                             }
                         }}
                     />
+
+                    <button
+                        onClick={sendMessage}
+                        disabled={!message.trim()}
+                    >
+                        Send
+                    </button>
                 </div>
 
                 {/* EMOJIS */}
                 <div className="emoji-bar">
                     {emojis.map((e, i) => (
-                        <button key={i} onClick={() => sendEmoji(e)}>
+                        <button
+                            key={i}
+                            onClick={() => sendEmoji(e)}
+                        >
                             {e}
                         </button>
                     ))}
