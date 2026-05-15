@@ -4,7 +4,7 @@ import { socket } from "../socket/socket";
 export default function useWebRTC(users) {
     const peers = useRef({});
     const localStream = useRef(null);
-    const remoteAudios = useRef({});
+    const remoteAudios = useRef([]);
 
     const [inVoice, setInVoice] = useState(false);
     const [muted, setMuted] = useState(false);
@@ -14,7 +14,7 @@ export default function useWebRTC(users) {
     let analyser;
     let dataArray;
 
-    // 🎤 SPEAKING DETECTION
+    //  SPEAKING DETECTION
     const detectSpeaking = () => {
         if (!localStream.current) return;
 
@@ -49,8 +49,9 @@ export default function useWebRTC(users) {
         check();
     };
 
-    // 🔗 CREATE PEER
+    // CREATE PEER
     const createPeer = (userId) => {
+
         const pc = new RTCPeerConnection({
             iceServers: [
                 {
@@ -71,29 +72,33 @@ export default function useWebRTC(users) {
 
         // 🔊 RECEIVE AUDIO
         pc.ontrack = (e) => {
-            console.log("Receiving audio from:", userId);
 
-            // prevent duplicate audios
-            if (remoteAudios.current[userId]) return;
+            console.log("TRACK RECEIVED");
 
-            const audio = new Audio();
+            const audio = document.createElement("audio");
 
             audio.srcObject = e.streams[0];
+
             audio.autoplay = true;
+            audio.controls = true;
 
-            audio.play().catch((err) => {
-                console.log(
-                    "Autoplay blocked:",
-                    err
-                );
-            });
+            audio.style.display = "none";
 
-            remoteAudios.current[userId] = audio;
+            document.body.appendChild(audio);
+
+            audio.play()
+                .then(() => {
+                    console.log("Audio playing");
+                })
+                .catch((err) => {
+                    console.log("Playback failed:", err);
+                });
+
+            remoteAudios.current.push(audio);
         };
 
         return pc;
     };
-
     // 🎤 JOIN VOICE
     const joinVoice = async () => {
         if (inVoice) return;
@@ -166,14 +171,13 @@ export default function useWebRTC(users) {
         }
 
         // remove audios
-        Object.values(remoteAudios.current).forEach(
-            (audio) => {
-                audio.pause();
-                audio.srcObject = null;
-            }
-        );
+        remoteAudios.current.forEach((audio) => {
+            audio.pause();
+            audio.srcObject = null;
+            audio.remove();
+        });
 
-        remoteAudios.current = {};
+        remoteAudios.current = [];
 
         setInVoice(false);
         setSpeaking(false);
@@ -181,7 +185,7 @@ export default function useWebRTC(users) {
         console.log("Voice left");
     };
 
-    // 🔇 MUTE
+    //  MUTE
     const toggleMute = () => {
         if (!localStream.current) return;
 
