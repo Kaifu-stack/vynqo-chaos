@@ -119,32 +119,61 @@ function App() {
 
     // ---- WebRTC ----
     const handleOffer = async ({ offer, from }) => {
+
+      console.log("Offer received from:", from);
+
       const pc = new RTCPeerConnection({
-        iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+        iceServers: [
+          {
+            urls: "stun:stun.l.google.com:19302"
+          }
+        ]
       });
+
+      peers.current[from] = pc;
+
+      pc.onicecandidate = (e) => {
+        if (e.candidate) {
+          socket.emit("ice-candidate", {
+            candidate: e.candidate,
+            to: from
+          });
+        }
+      };
+
+      pc.ontrack = (e) => {
+
+        console.log("TRACK RECEIVED");
+
+        const audio = new Audio();
+
+        audio.srcObject = e.streams[0];
+        audio.autoplay = true;
+
+        audio.play().catch((err) => {
+          console.log("Audio play failed:", err);
+        });
+      };
 
       await pc.setRemoteDescription(offer);
 
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true
-      });
+      const stream =
+        await navigator.mediaDevices.getUserMedia({
+          audio: true
+        });
 
       stream.getTracks().forEach((track) => {
         pc.addTrack(track, stream);
       });
 
       const answer = await pc.createAnswer();
+
       await pc.setLocalDescription(answer);
 
-      socket.emit("answer", { answer, to: from });
-
-      pc.ontrack = (e) => {
-        const audio = document.createElement("audio");
-        audio.srcObject = e.streams[0];
-        audio.autoplay = true;
-      };
-
-      peers.current[from] = pc;
+      socket.emit("answer", {
+        answer,
+        to: from
+      });
     };
 
     const handleAnswer = async ({ answer, from }) => {
@@ -154,7 +183,7 @@ function App() {
 
     const handleIce = ({ candidate, from }) => {
       const pc = peers.current[from];
-      if (pc) pc.addIceCandidate(candidate);
+      if (pc) await pc.addIceCandidate(candidate);
     };
 
     // ---- socket bindings ----

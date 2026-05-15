@@ -7,7 +7,7 @@ export default function Home({ joinRoom, createRoom, joinByCode }) {
     return (
         <div className="app-container">
             <div className="home-card">
-                <h1>🔥 Vynqo Chaos</h1>
+                <h1>🔥Chaos</h1>
 
                 <button onClick={joinRoom}>
                     Enter Random Chaos (5 min)
